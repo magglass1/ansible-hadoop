@@ -3,6 +3,17 @@
   shell: parted -s -a optimal /dev/{{ item }} mklabel gpt mkpart primary ext4 2048s 100% && sleep 2 && partprobe /dev/{{ item }} && sleep 2 && mkfs.ext4 -m1 /dev/{{ item }}1
   when: data_disks_devices is defined and data_disks_devices and ansible_devices[item]['partitions'] == {}
   with_items: data_disks_devices
+  async: 3600
+  register: async_partitioning
+
+- name: Wait for partitioning to complete
+  async_status:
+    jid: "{{item.ansible_job_id}}"
+  with_items: async_partitioning.results
+  register: partitioning_poll
+  until: partitioning_poll.finished
+  retries: 360
+  delay: 10
 
 - name: Disable periodic fsck
   shell: for disk in $(blkid|grep ext[3,4]|cut -f1 -d' '|sed -e 's/:$//'); do tune2fs -c0 -i0 $disk; done
