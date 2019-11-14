@@ -16,8 +16,8 @@
   with_items: "{{ groups['all'] }}"
   changed_when: 0
   register: result
-  retries: 1
-  delay: 1
+  retries: 6
+  delay: 10
   until: result.rc == 0
   ignore_errors: yes
 
